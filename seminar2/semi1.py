@@ -1,4 +1,4 @@
-    class RGBto_YUV:
+class RGBto_YUV:
     def RGB_to_YUV(self, R,G,B):
         Y = round(0.257 * R + 0.504 * G + 0.098 * B +16)
         U = round(-0.148 * R - 0.291 * G + 0.439 * B +128)
