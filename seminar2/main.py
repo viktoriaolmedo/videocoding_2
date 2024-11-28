@@ -86,6 +86,31 @@ def modify_resolution_endpoint(width: int, height: int):
     result = subprocess.run(command, capture_output=True, text=True)
      
     return {"message": "Resolución cambiada exitosamente", "output_file": output_file}
+
+@app.get("/api/modify_chroma_subsampling")
+def modify_chroma_subsampling():
+
+    input_file = "/Users/isall/OneDrive/UNI/4_uni/1_trim_4/Audio/videocoding_2/seminar2/bbb_sunflower_1080p_30fps_normal.mp4"  
+    
+    output_file = os.path.join(os.path.dirname(input_file),f"output_chroma_subsampling_420.mp4")
+    print("Ruta actual:", os.getcwd())
+    if not os.path.exists(input_file):
+        raise HTTPException(status_code=404, detail="Archivo de entrada no encontrado.")
+
+
+    # Construimos el comando para ffmpeg
+    command = [
+        "ffmpeg",
+        "-i", input_file,
+        "-c:v", "libx264",
+        "-vf", "format=yuv420p",
+        output_file
+    ]
+
+    # Ejecutamos el comando usando subprocess
+    result = subprocess.run(command, capture_output=True, text=True)
+     
+    return {"message": "Chroma subsampling cambiado a YUV 4:2:0 exitosamente", "output_file": output_file}
     
  
 
