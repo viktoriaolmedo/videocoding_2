@@ -1,8 +1,28 @@
+import subprocess
+import sys
+
+# Ensure the necessary packages are installed
+def install_packages():
+    required_packages = [
+        "ffmpeg-python",
+    ]
+    
+    # Install packages if not already installed
+    for package in required_packages:
+        try:
+            subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+        except subprocess.CalledProcessError:
+            print(f"Error installing {package}")
+
+# Call the function to install dependencies
+install_packages()
+
 import streamlit as st
 import subprocess
 import os
 import tempfile
 import shutil
+import ffmpeg
 import uuid
 
 # Streamlit app title
