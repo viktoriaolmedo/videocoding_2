@@ -317,3 +317,111 @@ async def generate_video_with_yuv_histogram(file: UploadFile = File(...)):
 
     except Exception as e:
         return {"error": f"Error processing the file: {str(e)}"}
+
+@app.get("/api/convert_video_codecs")
+def convert_video_codecs():
+    input_file = "/Users/isall/Downloads/bbb_sunflower_1080p_30fps_normal_2.mp4"
+    output_dir = os.path.dirname(input_file)
+    
+    if not os.path.exists(input_file):
+        raise HTTPException(status_code=404, detail="Original BBB file not found.")
+    
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    # Define codec configurations
+    base_name = os.path.splitext(os.path.basename(input_file))[0]
+    codecs = {
+        "vp8": {"ext": "webm", "codec": "libvpx"},
+        "vp9": {"ext": "webm", "codec": "libvpx-vp9"},
+        "h265": {"ext": "mp4", "codec": "libx265"},
+        "av1": {"ext": "mkv", "codec": "libaom-av1"}
+    }
+
+    output_files = {}
+
+    try:
+        for codec_name, settings in codecs.items():
+            output_file = os.path.join(output_dir, f"{base_name}_{codec_name}.{settings['ext']}")
+            command = [
+                "ffmpeg",
+                "-i", input_file,
+                "-c:v", settings["codec"],
+                "-crf", "30",  # Compression level
+                "-b:v", "0",   # Use constant quality for libvpx/libaom
+                output_file
+            ]
+
+            # Run the FFmpeg command
+            result = subprocess.run(command, capture_output=True, text=True)
+
+            if result.returncode != 0:
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Failed to convert video to {codec_name}: {result.stderr}"
+                )
+
+            output_files[codec_name] = output_file
+
+        return {
+            "message": "Video successfully converted to all codecs.",
+            "output_files": output_files
+        }
+
+    except subprocess.CalledProcessError as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"An error occurred while processing FFmpeg: {e}"
+        )
+        
+
+# @app.post("/api/encoding_ladder")
+# def create_encoding_ladder(resolutions: list = [(1920, 1080), (1280, 720), (640, 360)], bitrates: list = [5000, 2500, 1000]):
+#     """
+#     Create an encoding ladder by generating multiple video versions with different resolutions and bitrates.
+
+#     Args:
+#     - resolutions (list): List of tuples specifying width and height (e.g., [(1920, 1080), (1280, 720)]).
+#     - bitrates (list): List of bitrates in kbps corresponding to the resolutions (e.g., [5000, 2500]).
+
+#     Returns:
+#     - JSON response with paths to the encoded files.
+#     """
+#     input_file = "/Users/isall/Downloads/bbb_sunflower_1080p_30fps_normal_2.mp4"
+#     output_dir =  os.path.dirname(input_file)
+
+#     if not os.path.exists(input_file):
+#         raise HTTPException(status_code=404, detail="Input video file not found.")
+
+#     if not os.path.exists(output_dir):
+#         os.makedirs(output_dir)
+
+#     base_name = os.path.splitext(os.path.basename(input_file))[0]
+
+#     if len(resolutions) != len(bitrates):
+#         raise HTTPException(status_code=400, detail="Resolutions and bitrates must have the same length.")
+
+#     output_files = {}
+
+#     for (width, height), bitrate in zip(resolutions, bitrates):
+#         output_file = os.path.join(output_dir, f"{base_name}_{width}x{height}_{bitrate}kbps.mp4")
+#         command = [
+#             "ffmpeg",
+#             "-i", input_file,
+#             "-vf", f"scale={width}:{height}",
+#             "-b:v", f"{bitrate}k",
+#             "-c:v", "libx264",
+#             output_file
+#         ]
+
+#         result = subprocess.run(command, capture_output=True, text=True)
+
+#         if result.returncode != 0:
+#             raise HTTPException(
+#                 status_code=500,
+#                 detail=f"Failed to create encoding ladder for resolution {width}x{height}: {result.stderr}"
+#             )
+
+#         output_files[f"{width}x{height}_{bitrate}kbps"] = output_file
+
+#     return {"message": "Encoding ladder successfully created.", "output_files": output_files}
