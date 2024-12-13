@@ -319,6 +319,8 @@ async def generate_video_with_yuv_histogram(file: UploadFile = File(...)):
     except Exception as e:
         return {"error": f"Error processing the file: {str(e)}"}
 
+############################################################ PRACTICE 2 ############################################################
+
 @app.get("/api/convert_video_codecs")
 def convert_video_codecs():
     input_file = "/Users/isall/Downloads/bbb_sunflower_1080p_30fps_normal_2.mp4"
@@ -407,6 +409,7 @@ def encoding_ladder():
             bitrate = level["bitrate"]
 
             # Define output paths for each codec
+            vp8_output = os.path.join(output_dir, f"{base_name}_vp8_{res_width}x{res_height}.webm")
             vp9_output = os.path.join(output_dir, f"{base_name}_vp9_{res_width}x{res_height}.webm")
             h265_output = os.path.join(output_dir, f"{base_name}_h265_{res_width}x{res_height}.mp4")
 
@@ -420,6 +423,18 @@ def encoding_ladder():
                 vp9_output
             ]
             subprocess.run(vp9_command, capture_output=True, text=True, check=True)
+
+            # Generate VP8 version
+            vp8_command = [
+                "ffmpeg",
+                "-i", input_file,
+                "-vf", f"scale={res_width}:{res_height}",
+                "-c:v", "libvpx",
+                "-b:v", bitrate,
+                vp8_output
+            ]
+            subprocess.run(vp8_command, capture_output=True, text=True, check=True)
+
 
             # Generate H.265 version
             h265_command = [
@@ -435,6 +450,7 @@ def encoding_ladder():
             # Add results for download links
             results.append({
                 "resolution": f"{res_width}x{res_height}",
+                "vp8_output": vp8_output,
                 "vp9_output": vp9_output,
                 "h265_output": h265_output
             })
