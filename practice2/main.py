@@ -323,7 +323,7 @@ async def generate_video_with_yuv_histogram(file: UploadFile = File(...)):
 
 @app.get("/api/convert_video_codecs")
 def convert_video_codecs():
-    input_file = "/Users/isall/Downloads/bbb_sunflower_1080p_30fps_normal_2.mp4"
+    input_file = "/Users/isall/Downloads/skeletondance.mp4"
     output_dir = os.path.dirname(input_file)
     
     if not os.path.exists(input_file):
