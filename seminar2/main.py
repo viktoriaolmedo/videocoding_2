@@ -352,7 +352,7 @@ def convert_video_codecs():
                 output_file
             ]
 
-            # Run the FFmpeg command
+           # Run the FFmpeg command
             result = subprocess.run(command, capture_output=True, text=True)
 
             if result.returncode != 0:
@@ -373,7 +373,9 @@ def convert_video_codecs():
             status_code=500,
             detail=f"An error occurred while processing FFmpeg: {e}"
         )
-        
+
+
+       
 
 # @app.post("/api/encoding_ladder")
 # def create_encoding_ladder(resolutions: list = [(1920, 1080), (1280, 720), (640, 360)], bitrates: list = [5000, 2500, 1000]):
