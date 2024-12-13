@@ -16,6 +16,8 @@ processing_method = st.sidebar.selectbox(
         "Modify Resolution",
         "Modify Chroma Subsampling",
         "Package BBB Container",
+        "Generate Video with Macroblocks",
+        "Count Tracks in Video",
         "Generate Video with YUV Histogram",
         "Convert Video Codecs",
         "Encoding Ladder"
