@@ -10,6 +10,7 @@ import cv2
 from tempfile import NamedTemporaryFile
 import shutil
 import tempfile
+import uuid
 
 
 app = FastAPI()
@@ -374,56 +375,82 @@ def convert_video_codecs():
             detail=f"An error occurred while processing FFmpeg: {e}"
         )
 
+      
 
-       
+@app.get("/api/encoding_ladder")
+def encoding_ladder():
+    input_file = "/Users/isall/Downloads/bbb_sunflower_1080p_30fps_normal_2.mp4"
+    output_dir = os.path.dirname(input_file)
 
-# @app.post("/api/encoding_ladder")
-# def create_encoding_ladder(resolutions: list = [(1920, 1080), (1280, 720), (640, 360)], bitrates: list = [5000, 2500, 1000]):
-#     """
-#     Create an encoding ladder by generating multiple video versions with different resolutions and bitrates.
+    if not os.path.exists(input_file):
+        raise HTTPException(status_code=404, detail="Original BBB file not found.")
 
-#     Args:
-#     - resolutions (list): List of tuples specifying width and height (e.g., [(1920, 1080), (1280, 720)]).
-#     - bitrates (list): List of bitrates in kbps corresponding to the resolutions (e.g., [5000, 2500]).
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
 
-#     Returns:
-#     - JSON response with paths to the encoded files.
-#     """
-#     input_file = "/Users/isall/Downloads/bbb_sunflower_1080p_30fps_normal_2.mp4"
-#     output_dir =  os.path.dirname(input_file)
+    # Define encoding ladder configurations (resolutions and bitrates)
+    ladder = [
+        {"width": 426, "height": 240, "bitrate": "500k"},
+        {"width": 640, "height": 360, "bitrate": "800k"},
+        {"width": 854, "height": 480, "bitrate": "1200k"},
+        {"width": 1280, "height": 720, "bitrate": "2500k"},
+        {"width": 1920, "height": 1080, "bitrate": "5000k"},
+    ]
 
-#     if not os.path.exists(input_file):
-#         raise HTTPException(status_code=404, detail="Input video file not found.")
+    base_name = os.path.splitext(os.path.basename(input_file))[0]
+    results = []
 
-#     if not os.path.exists(output_dir):
-#         os.makedirs(output_dir)
+    try:
+        for level in ladder:
+            res_width = level["width"]
+            res_height = level["height"]
+            bitrate = level["bitrate"]
 
-#     base_name = os.path.splitext(os.path.basename(input_file))[0]
+            # Define output paths for each codec
+            vp9_output = os.path.join(output_dir, f"{base_name}_vp9_{res_width}x{res_height}.webm")
+            h265_output = os.path.join(output_dir, f"{base_name}_h265_{res_width}x{res_height}.mp4")
 
-#     if len(resolutions) != len(bitrates):
-#         raise HTTPException(status_code=400, detail="Resolutions and bitrates must have the same length.")
+            # Generate VP9 version
+            vp9_command = [
+                "ffmpeg",
+                "-i", input_file,
+                "-vf", f"scale={res_width}:{res_height}",
+                "-c:v", "libvpx-vp9",
+                "-b:v", bitrate,
+                vp9_output
+            ]
+            subprocess.run(vp9_command, capture_output=True, text=True, check=True)
 
-#     output_files = {}
+            # Generate H.265 version
+            h265_command = [
+                "ffmpeg",
+                "-i", input_file,
+                "-vf", f"scale={res_width}:{res_height}",
+                "-c:v", "libx265",
+                "-b:v", bitrate,
+                h265_output
+            ]
+            subprocess.run(h265_command, capture_output=True, text=True, check=True)
 
-#     for (width, height), bitrate in zip(resolutions, bitrates):
-#         output_file = os.path.join(output_dir, f"{base_name}_{width}x{height}_{bitrate}kbps.mp4")
-#         command = [
-#             "ffmpeg",
-#             "-i", input_file,
-#             "-vf", f"scale={width}:{height}",
-#             "-b:v", f"{bitrate}k",
-#             "-c:v", "libx264",
-#             output_file
-#         ]
+            # Add results for download links
+            results.append({
+                "resolution": f"{res_width}x{res_height}",
+                "vp9_output": vp9_output,
+                "h265_output": h265_output
+            })
 
-#         result = subprocess.run(command, capture_output=True, text=True)
+        return {
+            "message": "Encoding ladder generated successfully!",
+            "results": results
+        }
 
-#         if result.returncode != 0:
-#             raise HTTPException(
-#                 status_code=500,
-#                 detail=f"Failed to create encoding ladder for resolution {width}x{height}: {result.stderr}"
-#             )
-
-#         output_files[f"{width}x{height}_{bitrate}kbps"] = output_file
-
-#     return {"message": "Encoding ladder successfully created.", "output_files": output_files}
+    except subprocess.CalledProcessError as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"An error occurred while processing FFmpeg: {e.stderr}"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
