@@ -3,7 +3,6 @@ import subprocess
 import os
 import tempfile
 import shutil
-import cv2
 import uuid
 
 # Streamlit app title
@@ -108,48 +107,7 @@ if processing_method == "Modify Chroma Subsampling":
             except Exception as e:
                 st.error(f"An error occurred: {e}")
 
-# Get video information using OpenCV
-if processing_method == "Get Video Information":
-    st.header("Step 1: Upload Video to Get Information")
-    uploaded_file = st.file_uploader("Choose a video file", type=["mp4", "mov", "avi", "mkv"])
 
-    if uploaded_file is not None:
-        # Save the uploaded file to a temporary directory
-        input_file = os.path.join(temp_dir, uploaded_file.name)
-
-        with open(input_file, "wb") as f:
-            f.write(uploaded_file.read())
-
-        st.success(f"Uploaded video saved to: {input_file}")
-
-        if st.button("Get Video Information"):
-            try:
-                # Open the video file using OpenCV
-                video_capture = cv2.VideoCapture(input_file)
-
-                # Retrieve video properties
-                frame_count = int(video_capture.get(cv2.CAP_PROP_FRAME_COUNT))
-                fps = video_capture.get(cv2.CAP_PROP_FPS)
-                width = int(video_capture.get(cv2.CAP_PROP_FRAME_WIDTH))
-                height = int(video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
-                codec = int(video_capture.get(cv2.CAP_PROP_FOURCC))
-                duration = frame_count / fps if fps > 0 else 0
-
-                # Convert codec integer to string
-                codec_str = "".join([chr((codec >> 8 * i) & 0xFF) for i in range(4)])
-
-                video_capture.release()
-
-                # Display video info
-                st.subheader("Video Information")
-                st.write(f"**Duration**: {duration:.2f} seconds")
-                st.write(f"**Frame Rate**: {fps:.2f} FPS")
-                st.write(f"**Resolution**: {width}x{height}")
-                st.write(f"**Codec**: {codec_str}")
-                st.write(f"**Frame Count**: {frame_count}")
-
-            except Exception as e:
-                st.error(f"An error occurred: {e}")
 
 # Package BBB Container
 if processing_method == "Package BBB Container":
